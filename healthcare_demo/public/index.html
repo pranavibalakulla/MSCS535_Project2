@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Healthcare Portal – Security Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #333; }
+
+    header {
+      background: linear-gradient(135deg, #1a3c5e, #2980b9);
+      color: white; padding: 24px 40px; text-align: center;
+    }
+    header h1 { font-size: 26px; margin-bottom: 6px; }
+    header p  { font-size: 13px; opacity: 0.85; }
+    .edu-badge {
+      display: inline-block; background: #f39c12; color: #fff;
+      font-size: 11px; font-weight: bold; padding: 4px 10px;
+      border-radius: 20px; margin-top: 8px; letter-spacing: 0.5px;
+    }
+
+    .tabs {
+      display: flex; background: #fff; border-bottom: 2px solid #dde3ea;
+      padding: 0 40px; overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 14px 20px; cursor: pointer; border: none; background: none;
+      font-size: 13px; font-weight: 600; color: #666; border-bottom: 3px solid transparent;
+      white-space: nowrap; transition: all 0.2s;
+    }
+    .tab-btn:hover   { color: #2980b9; }
+    .tab-btn.active  { color: #2980b9; border-bottom-color: #2980b9; }
+
+    .tab-content { display: none; padding: 30px 40px; }
+    .tab-content.active { display: block; }
+
+    .demo-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 10px;
+    }
+    @media(max-width:800px){ .demo-grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #fff; border-radius: 10px; padding: 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card.vuln { border-top: 4px solid #e74c3c; }
+    .card.secure { border-top: 4px solid #27ae60; }
+
+    .card-title {
+      font-size: 15px; font-weight: 700; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card.vuln   .card-title { color: #c0392b; }
+    .card.secure .card-title { color: #1e8449; }
+
+    .card-subtitle { font-size: 12px; color: #888; margin-bottom: 16px; }
+
+    label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; }
+
+    input[type=text], select {
+      width: 100%; padding: 9px 12px; border: 1px solid #d0d7de;
+      border-radius: 6px; font-size: 13px; margin-bottom: 10px;
+      outline: none; transition: border 0.2s;
+    }
+    input[type=text]:focus, select:focus { border-color: #2980b9; }
+
+    .btn {
+      padding: 9px 18px; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+      margin-right: 6px; margin-bottom: 6px;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-vuln   { background: #e74c3c; color: #fff; }
+    .btn-secure { background: #27ae60; color: #fff; }
+    .btn-link   { background: #7f8c8d; color: #fff; }
+    .btn-reset  { background: #e67e22; color: #fff; }
+
+    .result-box {
+      margin-top: 14px; padding: 12px 14px; border-radius: 6px;
+      font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;
+      min-height: 50px; display: none;
+    }
+    .result-box.show { display: block; }
+    .result-box.vuln-result   { background: #fff5f5; border: 1px solid #f5c6cb; color: #721c24; }
+    .result-box.secure-result { background: #f0fff4; border: 1px solid #b7dfb8; color: #155724; }
+
+    pre.code-block {
+      background: #1e2a3a; color: #abb2bf; font-size: 11px; padding: 14px;
+      border-radius: 6px; overflow-x: auto; margin-top: 12px; line-height: 1.6;
+    }
+    .kw  { color: #c678dd; }
+    .fn  { color: #61afef; }
+    .str { color: #98c379; }
+    .cm  { color: #5c6370; font-style: italic; }
+    .hl  { color: #e06c75; }
+
+    .section-intro {
+      background: #fff; border-radius: 10px; padding: 18px 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px;
+      border-left: 4px solid #2980b9; font-size: 13px; line-height: 1.7;
+    }
+    .section-intro h3 { font-size: 15px; color: #1a3c5e; margin-bottom: 6px; }
+
+    .payload-tip {
+      background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px;
+      padding: 10px 14px; font-size: 12px; margin-bottom: 10px; color: #7d5a00;
+    }
+    .payload-tip strong { display: block; margin-bottom: 4px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+    th { background: #f4f6f9; padding: 8px 12px; text-align: left; color: #555; font-weight: 600; }
+    td { padding: 8px 12px; border-top: 1px solid #eee; }
+    tr:hover td { background: #fafafa; }
+
+    hr { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏥 Healthcare Patient Portal</h1>
+  <p>JavaScript Security Vulnerabilities – Live Interactive Demo</p>
+  <span class="edu-badge">⚠️ EDUCATIONAL PURPOSES ONLY – Run Locally</span>
+</header>
+
+<!-- TAB NAVIGATION -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('reflected')">1. Reflected XSS</button>
+  <button class="tab-btn"       onclick="showTab('stored')">2. Stored XSS</button>
+  <button class="tab-btn"       onclick="showTab('dom')">3. DOM-Based XSS</button>
+  <button class="tab-btn"       onclick="showTab('eval')">4. eval() Vulnerability</button>
+  <button class="tab-btn"       onclick="showTab('reset')">🔄 Reset Demo</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 1: REFLECTED XSS                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-reflected" class="tab-content active">
+  <div class="section-intro">
+    <h3>📌 Reflected XSS – How It Works</h3>
+    The server reflects user input back into the HTML response without sanitization.
+    An attacker crafts a malicious URL containing a script payload and tricks a patient into clicking it.
+    The browser executes the injected script in the context of the healthcare portal.
+  </div>
+
+  <div class="demo-grid">
+    <!-- VULNERABLE -->
+    <div class="card vuln">
+      <div class="card-title">⚠️ Vulnerable Search</div>
+      <div class="card-subtitle">Input injected directly into HTML – no encoding</div>
+
+      <div class="payload-tip">
+        <strong>💡 Try this XSS payload in the search box:</strong>
+        &lt;img src=x onerror=alert('XSS Attack! Cookies: '+document.cookie)&gt;
+      </div>
+
+      <label>Patient Record Search</label>
+      <input type="text" id="vuln-search-input" placeholder="Enter search term or XSS payload..." />
+      <button class="btn btn-vuln" onclick="runVulnSearch()">Search (Vulnerable)</button>
+      <button class="btn btn-link" onclick="openVulnSearch()">Open in New Tab ↗</button>
+
+      <div id="vuln-search-result" class="result-box vuln-result"></div>
+
+      <pre class="code-block"><span class="cm">// ❌ VULNERABLE server code</span>
+<span class="kw">app</span>.<span class="fn">get</span>(<span class="str">'/vulnerable/search'</span>, (req, res) => {
+  <span class="kw">const</span> query = req.query.q;
+  <span class="cm">// User input injected directly — NO encoding</span>
+  res.<span class="fn">send</span>(<span class="str">`&lt;h2&gt;Results for: <span class="hl">${query}</span>&lt;/h2&gt;`</span>);
+});</pre>
+    </div>
+
+    <!-- SECURE -->
+    <div class="card secure">
+      <div class="card-title">✅ Secure Search</div>
+      <div class="card-subtitle">Input validated + HTML-encoded with he.encode()</div>
+
+      <div class="payload-tip" style="background:#e8f5e9; border-color:#a5d6a7; color:#1b5e20;">
+        <strong>💡 Try the same XSS payload here — it will be neutralized:</strong>
+        &lt;img src=x onerror=alert('XSS Attack! Cookies: '+document.cookie)&gt;
+      </div>
+
+      <label>Patient Record Search</label>
+      <input type="text" id="secure-search-input" placeholder="Enter search term or XSS payload..." />
+      <button class="btn btn-secure" onclick="runSecureSearch()">Search (Secure)</button>
+      <button class="btn btn-link" onclick="openSecureSearch()">Open in New Tab ↗</button>
+
+      <div id="secure-search-result" class="result-box secure-result"></div>
+
+      <pre class="code-block"><span class="cm">// ✅ SECURE server code</span>
+<span class="kw">const</span> he = <span class="fn">require</span>(<span class="str">'he'</span>);
+
+<span class="kw">app</span>.<span class="fn">get</span>(<span class="str">'/secure/search'</span>, (req, res) => {
+  <span class="kw">const</span> query = req.query.q || <span class="str">''</span>;
+  <span class="cm">// Strip non-alphanumeric chars</span>
+  <span class="kw">const</span> sanitized = query
+    .<span class="fn">replace</span>(<span class="hl">/[^a-zA-Z0-9\s\-\.]/g</span>, <span class="str">''</span>);
+  <span class="cm">// HTML-encode before rendering</span>
+  <span class="kw">const</span> encoded = he.<span class="fn">encode</span>(sanitized);
+  res.<span class="fn">send</span>(<span class="str">`&lt;h2&gt;Results for: ${encoded}&lt;/h2&gt;`</span>);
+});</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 2: STORED XSS                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-stored" class="tab-content">
+  <div class="section-intro">
+    <h3>📌 Stored XSS – How It Works</h3>
+    The attacker submits a malicious script through a form (e.g. patient message).
+    The server stores it without sanitization. Every user who loads the page triggers the script —
+    no crafted link required. This is the most dangerous form of XSS.
+  </div>
+
+  <div class="demo-grid">
+    <!-- VULNERABLE -->
+    <div class="card vuln">
+      <div class="card-title">⚠️ Vulnerable Message Board</div>
+      <div class="card-subtitle">Messages stored and rendered without sanitization</div>
+
+      <div class="payload-tip">
+        <strong>💡 Submit this payload as a message:</strong>
+        &lt;img src=x onerror=alert('Stored XSS! Your session: '+document.cookie)&gt;
+      </div>
+
+      <label>Send Message to Doctor (Vulnerable)</label>
+      <input type="text" id="vuln-msg-input" placeholder="Type a message or XSS payload..." />
+      <button class="btn btn-vuln" onclick="submitVulnMessage()">Submit Message</button>
+      <button class="btn btn-link" onclick="window.open('/vulnerable/messages','_blank')">View Message Board ↗</button>
+
+      <div id="vuln-msg-result" class="result-box vuln-result"></div>
+
+      <pre class="code-block"><span class="cm">// ❌ VULNERABLE – stored without sanitization</span>
+<span class="kw">app</span>.<span class="fn">post</span>(<span class="str">'/vulnerable/messages'</span>, (req, res) => {
+  <span class="kw">const</span> { content } = req.body;
+  messages.<span class="fn">push</span>({ content }); <span class="cm">// raw push</span>
+});
+
+<span class="cm">// ❌ VULNERABLE – rendered without encoding</span>
+messages.<span class="fn">forEach</span>(msg => {
+  html += <span class="str">`&lt;p&gt;<span class="hl">${msg.content}</span>&lt;/p&gt;`</span>;
+});</pre>
+    </div>
+
+    <!-- SECURE -->
+    <div class="card secure">
+      <div class="card-title">✅ Secure Message Board</div>
+      <div class="card-subtitle">Sanitized with DOMPurify + encoded with he.encode()</div>
+
+      <div class="payload-tip" style="background:#e8f5e9; border-color:#a5d6a7; color:#1b5e20;">
+        <strong>💡 Submit the same payload here — it will be stripped completely:</strong>
+        &lt;img src=x onerror=alert('Stored XSS! Your session: '+document.cookie)&gt;
+      </div>
+
+      <label>Send Message to Doctor (Secure)</label>
+      <input type="text" id="secure-msg-input" placeholder="Type a message or XSS payload..." />
+      <button class="btn btn-secure" onclick="submitSecureMessage()">Submit Message</button>
+      <button class="btn btn-link" onclick="window.open('/secure/messages','_blank')">View Message Board ↗</button>
+
+      <div id="secure-msg-result" class="result-box secure-result"></div>
+
+      <pre class="code-block"><span class="cm">// ✅ SECURE – DOMPurify sanitization on store</span>
+<span class="kw">const</span> DOMPurify = <span class="fn">createDOMPurify</span>(<span class="kw">new</span> <span class="fn">JSDOM</span>(<span class="str">''</span>).window);
+
+<span class="kw">app</span>.<span class="fn">post</span>(<span class="str">'/secure/messages'</span>, (req, res) => {
+  <span class="kw">const</span> safe = DOMPurify.<span class="fn">sanitize</span>(
+    req.body.content, { ALLOWED_TAGS: [] }
+  );
+  messages.<span class="fn">push</span>({ content: safe });
+});
+
+<span class="cm">// ✅ SECURE – he.encode() on render</span>
+messages.<span class="fn">forEach</span>(msg => {
+  html += <span class="str">`&lt;p&gt;${he.<span class="fn">encode</span>(msg.content)}&lt;/p&gt;`</span>;
+});</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 3: DOM-BASED XSS                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-dom" class="tab-content">
+  <div class="section-intro">
+    <h3>📌 DOM-Based XSS – How It Works</h3>
+    The attack payload is processed entirely in the browser via JavaScript DOM manipulation.
+    No data is sent to or reflected by the server — making it invisible to server-side defenses.
+    This demo runs entirely client-side.
+  </div>
+
+  <div class="demo-grid">
+    <!-- VULNERABLE -->
+    <div class="card vuln">
+      <div class="card-title">⚠️ Vulnerable DOM Rendering</div>
+      <div class="card-subtitle">Uses innerHTML with URL parameter — no sanitization</div>
+
+      <div class="payload-tip">
+        <strong>💡 Click "Inject Payload" to simulate the attack URL:</strong>
+        ?name=&lt;img src=x onerror=alert('DOM XSS!')&gt;
+      </div>
+
+      <label>Patient Name (from URL ?name= parameter)</label>
+      <input type="text" id="dom-vuln-input" placeholder="Or type a name / payload manually..." />
+      <button class="btn btn-vuln" onclick="runDomVuln()">Render (Vulnerable)</button>
+      <button class="btn btn-link" onclick="injectDomPayload()">Inject XSS Payload</button>
+
+      <div style="margin-top:12px; padding:12px; background:#fff5f5; border:1px solid #f5c6cb; border-radius:6px;">
+        <p style="font-size:12px; font-weight:600; color:#c0392b; margin-bottom:6px;">Rendered Output (Vulnerable):</p>
+        <div id="dom-vuln-output" style="font-size:13px; color:#333;">Welcome, Patient!</div>
+      </div>
+
+      <pre class="code-block"><span class="cm">// ❌ VULNERABLE – innerHTML with URL param</span>
+<span class="kw">const</span> params = <span class="kw">new</span> <span class="fn">URLSearchParams</span>(
+  window.location.search
+);
+<span class="kw">const</span> name = params.<span class="fn">get</span>(<span class="str">'name'</span>);
+
+<span class="cm">// innerHTML interprets HTML tags!</span>
+document.<span class="fn">getElementById</span>(<span class="str">'banner'</span>)
+  .innerHTML = <span class="str">'Welcome, '</span> + <span class="hl">name</span>;</pre>
+    </div>
+
+    <!-- SECURE -->
+    <div class="card secure">
+      <div class="card-title">✅ Secure DOM Rendering</div>
+      <div class="card-subtitle">Uses textContent — never interprets HTML tags</div>
+
+      <div class="payload-tip" style="background:#e8f5e9; border-color:#a5d6a7; color:#1b5e20;">
+        <strong>💡 Same payload is neutralized — rendered as plain text:</strong>
+        ?name=&lt;img src=x onerror=alert('DOM XSS!')&gt;
+      </div>
+
+      <label>Patient Name (from URL ?name= parameter)</label>
+      <input type="text" id="dom-secure-input" placeholder="Or type a name / payload manually..." />
+      <button class="btn btn-secure" onclick="runDomSecure()">Render (Secure)</button>
+      <button class="btn btn-link" onclick="injectDomPayloadSecure()">Inject XSS Payload</button>
+
+      <div style="margin-top:12px; padding:12px; background:#f0fff4; border:1px solid #b7dfb8; border-radius:6px;">
+        <p style="font-size:12px; font-weight:600; color:#1e8449; margin-bottom:6px;">Rendered Output (Secure):</p>
+        <div id="dom-secure-output" style="font-size:13px; color:#333;">Welcome, Patient!</div>
+      </div>
+
+      <pre class="code-block"><span class="cm">// ✅ SECURE – textContent + validation</span>
+<span class="kw">const</span> raw = params.<span class="fn">get</span>(<span class="str">'name'</span>) || <span class="str">''</span>;
+
+<span class="cm">// Strip non-letter chars, limit length</span>
+<span class="kw">const</span> safe = raw
+  .<span class="fn">replace</span>(<span class="hl">/[^a-zA-Z\s\-]/g</span>, <span class="str">''</span>)
+  .<span class="fn">slice</span>(<span class="hl">0</span>, <span class="hl">100</span>);
+
+<span class="cm">// textContent NEVER renders HTML!</span>
+document.<span class="fn">getElementById</span>(<span class="str">'banner'</span>)
+  .textContent = <span class="str">'Welcome, '</span> + safe;</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 4: EVAL() VULNERABILITY                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-eval" class="tab-content">
+  <div class="section-intro">
+    <h3>📌 eval() Vulnerability – How It Works</h3>
+    <code>eval()</code> executes any JavaScript string as code at runtime.
+    If user input reaches eval(), an attacker can inject arbitrary logic — from data exfiltration
+    to privilege escalation. The server-side demo shows a patient record filter powered by eval().
+  </div>
+
+  <div class="demo-grid">
+    <!-- VULNERABLE -->
+    <div class="card vuln">
+      <div class="card-title">⚠️ Vulnerable Filter (eval)</div>
+      <div class="card-subtitle">User expression passed directly to eval()</div>
+
+      <div class="payload-tip">
+        <strong>💡 Try these inputs:</strong>
+        Normal: <code>record.age &gt; 40</code><br/>
+        Attack: <code>record.age &gt; 0; console.log('INJECTED:', JSON.stringify(patientRecords))</code>
+      </div>
+
+      <label>Patient Filter Expression (eval'd on server)</label>
+      <input type="text" id="eval-vuln-input" value="record.age > 40" />
+      <button class="btn btn-vuln" onclick="runVulnFilter()">Run Filter (eval)</button>
+
+      <div id="eval-vuln-result" class="result-box vuln-result"></div>
+
+      <pre class="code-block"><span class="cm">// ❌ VULNERABLE – eval() on user input</span>
+<span class="kw">app</span>.<span class="fn">post</span>(<span class="str">'/vulnerable/filter'</span>, (req, res) => {
+  <span class="kw">const</span> { expression } = req.body;
+
+  <span class="cm">// eval() executes ANY string as JS code!</span>
+  <span class="kw">const</span> filterFn = <span class="hl">eval</span>(
+    <span class="str">`(record) => `</span> + expression
+  );
+  <span class="kw">const</span> results = records.<span class="fn">filter</span>(filterFn);
+  res.<span class="fn">json</span>({ results });
+});</pre>
+    </div>
+
+    <!-- SECURE -->
+    <div class="card secure">
+      <div class="card-title">✅ Secure Filter (Whitelist)</div>
+      <div class="card-subtitle">Only predefined filter keys accepted — no eval()</div>
+
+      <div class="payload-tip" style="background:#e8f5e9; border-color:#a5d6a7; color:#1b5e20;">
+        <strong>💡 Only these keys are allowed (no custom code):</strong>
+        <code>age_over_40</code> | <code>age_over_60</code> | <code>all_records</code>
+      </div>
+
+      <label>Select a Predefined Filter</label>
+      <select id="eval-secure-input">
+        <option value="age_over_40">Patients over 40</option>
+        <option value="age_over_60">Patients over 60</option>
+        <option value="all_records">All Records</option>
+        <option value="malicious_payload">Inject Attack Payload (will be rejected)</option>
+      </select>
+      <button class="btn btn-secure" onclick="runSecureFilter()">Run Filter (Secure)</button>
+
+      <div id="eval-secure-result" class="result-box secure-result"></div>
+
+      <pre class="code-block"><span class="cm">// ✅ SECURE – Whitelist-based, no eval()</span>
+<span class="kw">const</span> ALLOWED = {
+  <span class="str">'age_over_40'</span>: r => r.age > <span class="hl">40</span>,
+  <span class="str">'age_over_60'</span>: r => r.age > <span class="hl">60</span>,
+  <span class="str">'all_records'</span>: r => <span class="hl">true</span>,
+};
+
+<span class="kw">app</span>.<span class="fn">post</span>(<span class="str">'/secure/filter'</span>, (req, res) => {
+  <span class="kw">const</span> { filterKey } = req.body;
+  <span class="kw">if</span> (!ALLOWED.<span class="fn">hasOwnProperty</span>(filterKey))
+    <span class="kw">return</span> res.<span class="fn">json</span>({ error: <span class="str">'Invalid key'</span> });
+
+  <span class="kw">const</span> results = records.<span class="fn">filter</span>(ALLOWED[filterKey]);
+  res.<span class="fn">json</span>({ results });
+});</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TAB 5: RESET                                           -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="tab-reset" class="tab-content">
+  <div class="card" style="max-width:480px; margin: 0 auto; text-align:center;">
+    <div class="card-title" style="justify-content:center; font-size:18px; margin-bottom:10px;">🔄 Reset Demo Data</div>
+    <p style="font-size:13px; color:#666; margin-bottom:20px;">
+      Clears all stored messages from both the vulnerable and secure message boards.
+    </p>
+    <button class="btn btn-reset" style="font-size:14px; padding:12px 30px;" onclick="resetDemo()">
+      Clear All Messages
+    </button>
+    <div id="reset-result" class="result-box secure-result" style="text-align:left; margin-top:16px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+  // ── Tab Switching ─────────────────────────────────────
+  function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function showResult(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'result-box show ' + type;
+  }
+
+  // ── Tab 1: Reflected XSS ──────────────────────────────
+  function runVulnSearch() {
+    const q = document.getElementById('vuln-search-input').value;
+    showResult('vuln-search-result', '→ Opening vulnerable page in new tab with your payload...', 'vuln-result');
+    window.open('/vulnerable/search?q=' + encodeURIComponent(q), '_blank');
+  }
+  function openVulnSearch() {
+    window.open('/vulnerable/search?q=<img src=x onerror=alert(\'XSS!\')>', '_blank');
+  }
+  function runSecureSearch() {
+    const q = document.getElementById('secure-search-input').value;
+    showResult('secure-search-result', '→ Opening secure page in new tab with your payload...', 'secure-result');
+    window.open('/secure/search?q=' + encodeURIComponent(q), '_blank');
+  }
+  function openSecureSearch() {
+    window.open('/secure/search?q=<img src=x onerror=alert(\'XSS!\')>', '_blank');
+  }
+
+  // ── Tab 2: Stored XSS ────────────────────────────────
+  async function submitVulnMessage() {
+    const content = document.getElementById('vuln-msg-input').value;
+    if (!content) return showResult('vuln-msg-result', 'Please enter a message.', 'vuln-result');
+    const res  = await fetch('/vulnerable/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    const data = await res.json();
+    showResult('vuln-msg-result',
+      '✓ ' + data.note + '\n\nClick "View Message Board" to see the stored message render (script may execute!)',
+      'vuln-result');
+  }
+
+  async function submitSecureMessage() {
+    const content = document.getElementById('secure-msg-input').value;
+    if (!content) return showResult('secure-msg-result', 'Please enter a message.', 'secure-result');
+    const res  = await fetch('/secure/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    const data = await res.json();
+    showResult('secure-msg-result',
+      '✓ ' + data.note + '\nSanitized value stored: "' + data.sanitized + '"',
+      'secure-result');
+  }
+
+  // ── Tab 3: DOM-Based XSS ─────────────────────────────
+  const XSS_PAYLOAD = '<img src=x onerror=alert(\'DOM XSS! Server never saw this.\')>';
+
+  function runDomVuln() {
+    const val = document.getElementById('dom-vuln-input').value || 'Patient';
+    // VULNERABLE: innerHTML
+    document.getElementById('dom-vuln-output').innerHTML = 'Welcome, ' + val + '!';
+  }
+  function injectDomPayload() {
+    document.getElementById('dom-vuln-input').value = XSS_PAYLOAD;
+    runDomVuln();
+  }
+  function runDomSecure() {
+    const raw  = document.getElementById('dom-secure-input').value || 'Patient';
+    // SECURE: validate + textContent
+    const safe = raw.replace(/[^a-zA-Z\s\-]/g, '').slice(0, 100);
+    document.getElementById('dom-secure-output').textContent = 'Welcome, ' + (safe || 'Patient') + '!';
+  }
+  function injectDomPayloadSecure() {
+    document.getElementById('dom-secure-input').value = XSS_PAYLOAD;
+    runDomSecure();
+  }
+
+  // ── Tab 4: eval() ─────────────────────────────────────
+  async function runVulnFilter() {
+    const expression = document.getElementById('eval-vuln-input').value;
+    const res  = await fetch('/vulnerable/filter', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expression })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showResult('eval-vuln-result',
+        '⚠️ ' + data.warning + '\n\nResults (' + data.results.length + ' records):\n' +
+        data.results.map(r => `  • ${r.name}, Age ${r.age}, ${r.condition}`).join('\n'),
+        'vuln-result');
+    } else {
+      showResult('eval-vuln-result', 'Error: ' + data.error, 'vuln-result');
+    }
+  }
+
+  async function runSecureFilter() {
+    const filterKey = document.getElementById('eval-secure-input').value;
+    const res  = await fetch('/secure/filter', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filterKey })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showResult('eval-secure-result',
+        '✅ ' + data.note + '\n\nResults (' + data.results.length + ' records):\n' +
+        data.results.map(r => `  • ${r.name}, Age ${r.age}, ${r.condition}`).join('\n'),
+        'secure-result');
+    } else {
+      showResult('eval-secure-result', '🚫 Rejected: ' + data.error, 'secure-result');
+    }
+  }
+
+  // ── Reset ─────────────────────────────────────────────
+  async function resetDemo() {
+    const res  = await fetch('/reset', { method: 'POST' });
+    const data = await res.json();
+    showResult('reset-result', '✓ ' + data.message, 'secure-result');
+  }
+</script>
+
+</body>
+</html>
