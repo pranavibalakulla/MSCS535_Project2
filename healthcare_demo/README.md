@@ -42,7 +42,3 @@ Each tab shows a **Vulnerable** (red) version and a **Secure** (green) version s
 
 ---
 
-## ⚠️ Warning
-
-This app is for **educational purposes only**.  
-Do NOT deploy it to a production or public environment.
